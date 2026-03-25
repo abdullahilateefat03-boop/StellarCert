@@ -1,6 +1,7 @@
 import { Injectable, Logger as NestLogger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
+import { SecurityEvent } from '../security';
 
 export interface LogContext {
   correlationId?: string;
@@ -11,6 +12,12 @@ export interface LogContext {
 
 @Injectable()
 export class LoggingService {
+  info(arg0: string) {
+    throw new Error('Method not implemented.');
+  }
+  info(arg0: string, event: SecurityEvent) {
+    throw new Error('Method not implemented.');
+  }
   private contextMap: Map<string, LogContext> = new Map();
   private readonly logger = new NestLogger(LoggingService.name);
 

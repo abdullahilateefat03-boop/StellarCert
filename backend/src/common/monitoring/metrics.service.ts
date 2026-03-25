@@ -3,6 +3,12 @@ import { Counter, Histogram, Registry } from 'prom-client';
 
 @Injectable()
 export class MetricsService {
+  incrementCounter(arg0: string) {
+    throw new Error('Method not implemented.');
+  }
+  incrementCounter(arg0: string) {
+    throw new Error('Method not implemented.');
+  }
   private readonly logger = new Logger(MetricsService.name);
   private readonly registry: Registry;
 

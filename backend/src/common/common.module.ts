@@ -21,6 +21,7 @@ import {
   TransformUtils,
   StringUtils,
 } from './utils';
+import { SecurityModule } from './security/security.module';
 import {
   RateLimitService,
   RATE_LIMIT_QUEUE_NAME,
@@ -42,6 +43,7 @@ import { Issuer } from '../modules/issuers/entities/issuer.entity';
         removeOnFail: false,
       },
     }),
+    SecurityModule,
   ],
   providers: [
     LoggingService,
@@ -108,6 +110,7 @@ import { Issuer } from '../modules/issuers/entities/issuer.entity';
     SentryService,
     JwtModule,
     RateLimitService,
+    SecurityModule,
   ],
 })
 export class CommonModule implements NestModule {

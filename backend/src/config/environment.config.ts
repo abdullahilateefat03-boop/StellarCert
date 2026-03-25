@@ -127,6 +127,55 @@ class EnvironmentVariables {
   @IsOptional()
   @IsNumber()
   AUDIT_RETENTION_DAYS?: number;
+
+  // Security Configuration
+  @IsOptional()
+  @IsNumber()
+  RATE_LIMIT_WINDOW_MS?: number;
+
+  @IsOptional()
+  @IsNumber()
+  RATE_LIMIT_FREE_PER_WINDOW?: number;
+
+  @IsOptional()
+  @IsNumber()
+  RATE_LIMIT_PAID_PER_WINDOW?: number;
+
+  @IsOptional()
+  @IsNumber()
+  MAX_JSON_SIZE?: string;
+
+  @IsOptional()
+  @IsString()
+  MAX_URL_ENCODED_SIZE?: string;
+
+  @IsOptional()
+  @IsNumber()
+  BRUTE_FORCE_MAX_ATTEMPTS?: number;
+
+  @IsOptional()
+  @IsNumber()
+  BRUTE_FORCE_WINDOW_MS?: number;
+
+  @IsOptional()
+  @IsNumber()
+  BRUTE_FORCE_LOCKOUT_MS?: number;
+
+  @IsOptional()
+  @IsNumber()
+  HSTS_MAX_AGE?: number;
+
+  @IsOptional()
+  @IsString()
+  CSP_REPORT_URI?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  CORS_CREDENTIALS?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  CORS_MAX_AGE?: number;
 }
 
 export function validateEnv(): EnvironmentVariables {
@@ -169,6 +218,35 @@ export function validateEnv(): EnvironmentVariables {
       AUDIT_RETENTION_DAYS: process.env.AUDIT_RETENTION_DAYS
         ? parseInt(process.env.AUDIT_RETENTION_DAYS, 10)
         : undefined,
+      // Security defaults
+      RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS
+        ? parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10)
+        : 60000,
+      RATE_LIMIT_FREE_PER_WINDOW: process.env.RATE_LIMIT_FREE_PER_WINDOW
+        ? parseInt(process.env.RATE_LIMIT_FREE_PER_WINDOW, 10)
+        : 60,
+      RATE_LIMIT_PAID_PER_WINDOW: process.env.RATE_LIMIT_PAID_PER_WINDOW
+        ? parseInt(process.env.RATE_LIMIT_PAID_PER_WINDOW, 10)
+        : 600,
+      MAX_JSON_SIZE: process.env.MAX_JSON_SIZE || '100kb',
+      MAX_URL_ENCODED_SIZE: process.env.MAX_URL_ENCODED_SIZE || '100kb',
+      BRUTE_FORCE_MAX_ATTEMPTS: process.env.BRUTE_FORCE_MAX_ATTEMPTS
+        ? parseInt(process.env.BRUTE_FORCE_MAX_ATTEMPTS, 10)
+        : 5,
+      BRUTE_FORCE_WINDOW_MS: process.env.BRUTE_FORCE_WINDOW_MS
+        ? parseInt(process.env.BRUTE_FORCE_WINDOW_MS, 10)
+        : 15 * 60 * 1000,
+      BRUTE_FORCE_LOCKOUT_MS: process.env.BRUTE_FORCE_LOCKOUT_MS
+        ? parseInt(process.env.BRUTE_FORCE_LOCKOUT_MS, 10)
+        : 30 * 60 * 1000,
+      HSTS_MAX_AGE: process.env.HSTS_MAX_AGE
+        ? parseInt(process.env.HSTS_MAX_AGE, 10)
+        : 31536000,
+      CSP_REPORT_URI: process.env.CSP_REPORT_URI,
+      CORS_CREDENTIALS: process.env.CORS_CREDENTIALS !== 'false',
+      CORS_MAX_AGE: process.env.CORS_MAX_AGE
+        ? parseInt(process.env.CORS_MAX_AGE, 10)
+        : 86400,
     },
     { enableImplicitConversion: true },
   );

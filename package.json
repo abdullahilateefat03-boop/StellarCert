@@ -43,7 +43,13 @@
   "dependencies": {
     "@nestjs/bull": "^11.0.4",
     "@nestjs/platform-express": "^11.1.12",
+    "@nestjs/throttler": "^6.5.0",
     "bull": "^4.16.5",
-    "nodemailer": "^7.0.12"
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.4",
+    "helmet": "^8.1.0",
+    "hpp": "^0.2.3",
+    "nodemailer": "^7.0.12",
+    "xss-clean": "^0.1.4"
   }
 }
