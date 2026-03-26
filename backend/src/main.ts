@@ -12,8 +12,9 @@ import { ConfigService } from '@nestjs/config';
 import * as express from 'express';
 import * as xss from 'xss-clean';
 import * as hpp from 'hpp';
-import { ValidationPipe } from './modules/security/validation.pipe';
-import { CorsMiddleware } from './modules/security/cors.middleware';
+import { RateLimitGuard } from './modules/security/rate-limit.guard';
+import { SecurityHeadersInterceptor } from './modules/security/security-headers.interceptor';
+import { RequestValidationPipe } from './modules/security/request-validation.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -35,16 +36,24 @@ async function bootstrap() {
     }),
   );
 
-  // ✅ Request size limits
-  app.use(express.json({ limit: '10kb' }));
-  app.use(express.urlencoded({ limit: '10kb', extended: true }));
-
   // ✅ Input sanitization
   app.use(xss());
   app.use(hpp());
 
-  // ✅ Custom CORS middleware
-  app.use(new CorsMiddleware().use);
+  // ✅ CORS
+  app.enableCors({
+    origin: configService.get('CORS_ORIGIN') || 'http://localhost:3000',
+    credentials: true,
+  });
+
+  // ✅ Global validation pipe
+  app.useGlobalPipes(app.get(RequestValidationPipe));
+
+  // ✅ Global rate limit guard
+  app.useGlobalGuards(app.get(RateLimitGuard));
+
+  // ✅ Global security headers interceptor
+  app.useGlobalInterceptors(app.get(SecurityHeadersInterceptor));
 
   // ✅ Global prefix
   app.setGlobalPrefix('api');
@@ -54,9 +63,6 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
-
-  // ✅ Validation
-  app.useGlobalPipes(new ValidationPipe());
 
   // ✅ Exception filter
   app.useGlobalFilters(
@@ -86,4 +92,4 @@ async function bootstrap() {
   loggingService.log(`🔐 Security fully enabled`);
 }
 
-bootstrap();
+void bootstrap();

@@ -23,10 +23,7 @@ export class SanitizationService {
   /**
    * Sanitize string input by removing dangerous characters
    */
-  sanitizeString(
-    input: string,
-    options: SanitizationOptions = {},
-  ): string {
+  sanitizeString(input: string, options: SanitizationOptions = {}): string {
     const { allowHtml = false, maxLength = 10000 } = options;
 
     if (!input || typeof input !== 'string') {
@@ -47,15 +44,26 @@ export class SanitizationService {
     }
 
     // Remove control characters
-    sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+    sanitized = Array.from(sanitized)
+      .filter((char) => {
+        const code = char.charCodeAt(0);
+        return code >= 32 && code !== 127;
+      })
+      .join('');
 
     // If HTML not allowed, remove HTML tags and entities
     if (!allowHtml) {
       // Remove script tags and content
-      sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      sanitized = sanitized.replace(
+        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+        '',
+      );
 
       // Remove style tags
-      sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+      sanitized = sanitized.replace(
+        /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi,
+        '',
+      );
 
       // Remove event handlers
       sanitized = sanitized.replace(/on[a-z]+\s*=\s*["'][^"']*["']/gi, '');
@@ -83,10 +91,7 @@ export class SanitizationService {
       if (value === null || value === undefined) {
         sanitized[key as keyof T] = value;
       } else if (typeof value === 'string') {
-        sanitized[key as keyof T] = this.sanitizeString(
-          value,
-          options,
-        ) as any;
+        sanitized[key as keyof T] = this.sanitizeString(value, options) as any;
       } else if (Array.isArray(value)) {
         sanitized[key as keyof T] = value.map((item) => {
           if (typeof item === 'string') {
@@ -98,7 +103,7 @@ export class SanitizationService {
           return item;
         }) as any;
       } else if (typeof value === 'object') {
-        sanitized[key as keyof T] = this.sanitizeObject(value, options) as any;
+        sanitized[key as keyof T] = this.sanitizeObject(value, options);
       } else {
         sanitized[key as keyof T] = value;
       }
@@ -139,7 +144,7 @@ export class SanitizationService {
     let sanitized = filename.replace(/\.\.\//g, '').replace(/\.\.\\/g, '');
 
     // Remove special characters except dots and underscores
-    sanitized = sanitized.replace(/[^a-zA-Z0-9._\-]/g, '_');
+    sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');
 
     // Remove multiple consecutive dots
     sanitized = sanitized.replace(/\.{2,}/g, '.');

@@ -7,16 +7,31 @@ export interface LogContext {
   correlationId?: string;
   userId?: string;
   requestId?: string;
+  event?: SecurityEvent;
   [key: string]: unknown;
 }
 
 @Injectable()
 export class LoggingService {
-  info(arg0: string) {
-    throw new Error('Method not implemented.');
-  }
-  info(arg0: string, event: SecurityEvent) {
-    throw new Error('Method not implemented.');
+  info(message: string, context?: LogContext): void;
+  info(
+    message: { message: string; event?: SecurityEvent },
+    context?: LogContext,
+  ): void;
+  info(
+    message: string | { message: string; event?: SecurityEvent },
+    context?: LogContext,
+  ): void {
+    let msg: string;
+    let ctx = context;
+    if (typeof message === 'string') {
+      msg = message;
+    } else {
+      msg = message.message;
+      ctx = { ...ctx, event: message.event };
+    }
+    const logEntry = this.formatLog('INFO', msg, ctx);
+    console.info(logEntry);
   }
   private contextMap: Map<string, LogContext> = new Map();
   private readonly logger = new NestLogger(LoggingService.name);
@@ -88,8 +103,24 @@ export class LoggingService {
   /**
    * Log warning with context
    */
-  warn(message: string, context?: LogContext): void {
-    const logEntry = this.formatLog('WARN', message, context);
+  warn(message: string, context?: LogContext): void;
+  warn(
+    message: { message: string; event?: SecurityEvent },
+    context?: LogContext,
+  ): void;
+  warn(
+    message: string | { message: string; event?: SecurityEvent },
+    context?: LogContext,
+  ): void {
+    let msg: string;
+    let ctx = context;
+    if (typeof message === 'string') {
+      msg = message;
+    } else {
+      msg = message.message;
+      ctx = { ...ctx, event: message.event };
+    }
+    const logEntry = this.formatLog('WARN', msg, ctx);
     console.warn(logEntry);
   }
 

@@ -16,14 +16,12 @@ import { LogoutDto } from './dto/logout.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { LogoutResponseDto } from './dto/logout-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { BruteForceGuard } from '../security/brute-force.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  @UseGuards(BruteForceGuard)
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);

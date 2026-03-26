@@ -3,14 +3,9 @@ import { Counter, Histogram, Registry } from 'prom-client';
 
 @Injectable()
 export class MetricsService {
-  incrementCounter(arg0: string) {
-    throw new Error('Method not implemented.');
-  }
-  incrementCounter(arg0: string) {
-    throw new Error('Method not implemented.');
-  }
   private readonly logger = new Logger(MetricsService.name);
   private readonly registry: Registry;
+  private customCounters: Map<string, Counter> = new Map();
 
   // HTTP metrics
   private httpRequestDuration: Histogram;
@@ -89,6 +84,22 @@ export class MetricsService {
     });
 
     this.logger.log('Metrics service initialized');
+  }
+
+  /**
+   * Increment a custom counter
+   */
+  incrementCounter(name: string): void {
+    let counter = this.customCounters.get(name);
+    if (!counter) {
+      counter = new Counter({
+        name,
+        help: `Custom counter for ${name}`,
+        registers: [this.registry],
+      });
+      this.customCounters.set(name, counter);
+    }
+    counter.inc();
   }
 
   /**

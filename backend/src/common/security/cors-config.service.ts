@@ -162,7 +162,9 @@ export class CorsConfigService {
     if (isAllowed) {
       callback(null, true);
     } else {
-      this.loggingService.warn(`CORS request from disallowed origin: ${origin}`);
+      this.loggingService.warn(
+        `CORS request from disallowed origin: ${origin}`,
+      );
       callback(new Error('CORS policy: Origin not allowed'), false);
     }
   }

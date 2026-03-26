@@ -7,8 +7,6 @@ import { SecurityLoggingService } from './security-logging.service';
 import { CorsConfigService } from './cors-config.service';
 import { RequestSizeLimitMiddleware } from './request-size-limit.middleware';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { LoggingModule } from '../logging/logging.module';
-import { MonitoringModule } from '../monitoring/monitoring.module';
 
 /**
  * SecurityModule provides comprehensive API security features:
@@ -24,7 +22,7 @@ import { MonitoringModule } from '../monitoring/monitoring.module';
  * Export all security services for use in other modules
  */
 @Module({
-  imports: [ConfigModule, LoggingModule, MonitoringModule],
+  imports: [ConfigModule],
   providers: [
     // Global security headers interceptor
     {
@@ -58,8 +56,6 @@ export class SecurityModule implements NestModule {
    * Configure middleware for request size limiting
    */
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestSizeLimitMiddleware)
-      .forRoutes('*');
+    consumer.apply(RequestSizeLimitMiddleware).forRoutes('*');
   }
 }

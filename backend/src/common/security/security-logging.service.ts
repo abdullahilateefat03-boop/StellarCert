@@ -72,131 +72,16 @@ export class SecurityLoggingService {
 
     // Log immediately for critical events
     if (severity === 'high') {
-        this.loggingService.warn({
-            message: `SECURITY EVENT: ${type}`,
-                event
-                  });
-                  } else {
-                    this.loggingService.info({
-                        message: `Security: ${type}`,
-                'high') {
-                    this.loggingService.warn({
-                        message: `SECURITY EVENT: ${type}`,
-                            event
-                              });
-                              } else {
-                                this.loggingService.info({
-                                    message: `Security: ${type}`,
-                                        event
-                                          });
-                                          },if (severity === 'high') {
-                                            this.loggingService.warn({
-                                                message: `SECURITY EVENT: ${type}`,
-                                                    event
-                                                      });
-                                                      } else {
-                                                        this.loggingService.info({
-                                                            message: `Security: ${type}`,
-                                                                event
-                                                                  });
-                                                                  }'high') {
-                                                                    this.loggingService.warn({
-                                                                        message: `SECURITY EVENT: ${type}`,
-                                                                            event
-                                                                              });
-                                                                              } else {
-                                                                                this.loggingService.info({
-                                                                                    message: `Security: ${type}`,
-                                                                                        event
-                                                                                          });
-                                                                                          },if (severity === 'high') {
-                                                                                            this.loggingService.warn({
-                                                                                                message: `SECURITY EVENT: ${type}`,
-                                                                                                    event
-                                                                                                      });
-                                                                                                      } else {
-                                                                                                        this.loggingService.info({
-                                                                                                            message: `Security: ${type}`,
-                    
-          message: `SECURITY EVENT: ${type}`,
-              event
-                });
-                } else {
-                  this.loggingService.info({
-                      message: `Security: ${type}`,
-                          event
-                            });
-                            }'high') {
-                              this.loggingService.warn({
-                                  message: `SECURITY EVENT: ${type}`,
-                                      event
-                                        });
-                                        } else {
-                                          this.loggingService.info({
-                                              message: `Security: ${type}`,
-                                                  event
-                                                    });
-                                                    },if (severity === 'high') {
-                                                      this.loggingService.warn({
-                                                          message: `SECURITY EVENT: ${type}`,
-                                                              event
-                                                                });
-                                                                } else {
-                                                                  this.loggingService.info({
-                                                                      message: `Security: ${type}`,
-                                                                          event
-                                                                            });
-                                                                            }    message: `SECURITY EVENT: ${type}`,
-                                                                                event
-                                                                                  });
-                                                                                  } else {
-                                                                                    this.loggingService.info({
-                                                                                        message: `Security: ${type}`,
-                                                                                            event
-                                                                                              });
-                                                                                              }'high') {
-                                                                                                this.loggingService.warn({
-                                                                                                    message: `SECURITY EVENT: ${type}`,
-                                                                                                        event
-                                                                                                          });
-                                                                                                          } else {
-                                                                                                            this.loggingService.info({
-                                                                                                                message: `Security: ${type}`,
-                                                                                                                    event
-                                                                                                                      });
-                                                                                                                      },if (severity === 'high') 
-                                                                                                                        
-                                                                                                                             
-                                                                                                                                
-                                                                                                                                  
-                                                                                                                              
-                                                                                                                                
-                                                                                        
-                                                                                                                                            
-                                                      
-                                                                            
-  if (severity === 'high') {
       this.loggingService.warn({
-          message: `SECURITY EVENT: ${type}`,
-              event
-                });
-                } else {
-                  this.loggingService.info({
-                      message: `Security: ${type}`,
-                          event
-                            });
-                            },if (severity === 'high') {
-                              this.loggingService.warn({
-                                  message: `SECURITY EVENT: ${type}`,
-                                      event
-                                        });
-                                        } else {
-                                          this.loggingService.info({
-                                              message: `Security: ${type}`,
-                                                  event
-                                                    });
-              
-  }
+        message: `SECURITY EVENT: ${type}`,
+        event,
+      });
+    } else {
+      this.loggingService.info({
+        message: `Security: ${type}`,
+        event,
+      });
+    }
 
     // Flush if buffer is getting too large
     if (this.securityEventBuffer.length >= this.maxBufferSize) {
@@ -272,11 +157,7 @@ export class SecurityLoggingService {
   /**
    * Log request size exceeded
    */
-  logRequestSizeExceeded(
-    request: Request,
-    size: number,
-    limit: number,
-  ): void {
+  logRequestSizeExceeded(request: Request, size: number, limit: number): void {
     this.logSecurityEvent(
       SecurityEventType.REQUEST_SIZE_EXCEEDED,
       request,
@@ -309,23 +190,16 @@ export class SecurityLoggingService {
    * Log potential XSS attempt
    */
   logXSSAttempt(request: Request, suspiciousData: string): void {
-    this.logSecurityEvent(
-      SecurityEventType.XSS_ATTEMPT,
-      request,
-      'high',
-      {
-        suspiciousData: suspiciousData.substring(0, 500),
-        timestamp: new Date().toISOString(),
-      },
-    );
+    this.logSecurityEvent(SecurityEventType.XSS_ATTEMPT, request, 'high', {
+      suspiciousData: suspiciousData.substring(0, 500),
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**
    * Get security events for analysis (for admin dashboard)
    */
-  getRecentSecurityEvents(
-    limit: number = 100,
-  ): SecurityEvent[] {
+  getRecentSecurityEvents(limit: number = 100): SecurityEvent[] {
     return this.securityEventBuffer.slice(-limit);
   }
 
@@ -342,7 +216,8 @@ export class SecurityLoggingService {
 
     for (const event of this.securityEventBuffer) {
       eventsByType[event.type] = (eventsByType[event.type] || 0) + 1;
-      eventsBySeverity[event.severity] = (eventsBySeverity[event.severity] || 0) + 1;
+      eventsBySeverity[event.severity] =
+        (eventsBySeverity[event.severity] || 0) + 1;
     }
 
     return {

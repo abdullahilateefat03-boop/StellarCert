@@ -20,6 +20,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { MetadataSchemaModule } from './modules/metadata-schema/metadata-schema.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { SecurityModule } from './modules/security/security.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     WebhooksModule,
     MetadataSchemaModule,
     NotificationsModule,
+    SecurityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

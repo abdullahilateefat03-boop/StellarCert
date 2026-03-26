@@ -32,13 +32,11 @@ export class BruteForceProtectionService {
     private readonly loggingService: LoggingService,
     private readonly metricsService: MetricsService,
   ) {
-    this.maxAttempts =
-      this.configService.get('BRUTE_FORCE_MAX_ATTEMPTS') || 5;
+    this.maxAttempts = this.configService.get('BRUTE_FORCE_MAX_ATTEMPTS') || 5;
     this.windowMs =
       this.configService.get('BRUTE_FORCE_WINDOW_MS') || 15 * 60 * 1000; // 15 minutes
     this.lockoutDurationMs =
-      this.configService.get('BRUTE_FORCE_LOCKOUT_MS') ||
-      30 * 60 * 1000; // 30 minutes
+      this.configService.get('BRUTE_FORCE_LOCKOUT_MS') || 30 * 60 * 1000; // 30 minutes
 
     // Clean up old records every 5 minutes
     setInterval(() => this.cleanupOldRecords(), 5 * 60 * 1000);
@@ -65,10 +63,13 @@ export class BruteForceProtectionService {
     if (record.lockedUntil && record.lockedUntil > now) {
       const remainingMs = record.lockedUntil - now;
       this.metricsService.incrementCounter('brute_force_lockout');
-      this.loggingService.warn(`Brute force lockout for identifier: ${identifier}`, {
-        lockoutExpiresAt: record.lockedUntil,
-        remainingMs,
-      });
+      this.loggingService.warn(
+        `Brute force lockout for identifier: ${identifier}`,
+        {
+          lockoutExpiresAt: record.lockedUntil,
+          remainingMs,
+        },
+      );
 
       return {
         isBlocked: true,
@@ -154,7 +155,9 @@ export class BruteForceProtectionService {
    */
   unlock(identifier: string): void {
     this.storage.delete(identifier);
-    this.loggingService.info(`Brute force lock manually cleared for: ${identifier}`);
+    this.loggingService.info(
+      `Brute force lock manually cleared for: ${identifier}`,
+    );
   }
 
   /**
