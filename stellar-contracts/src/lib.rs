@@ -4,6 +4,15 @@ use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, String, Ve
 mod types;
 pub use types::*;
 
+// mod metadata;
+// pub use metadata::*;
+
+mod multisig;
+pub use multisig::*;
+
+mod crl;
+pub use crl::*;
+
 #[contract]
 pub struct CertificateContract;
 
@@ -111,6 +120,83 @@ impl CertificateContract {
     pub fn get_certificate(env: Env, id: String) -> Option<Certificate> {
         env.storage().instance().get(&DataKey::Certificate(id))
     }
+
+    /// Suspend a certificate
+    pub fn suspend_certificate(env: Env, id: String) {
+        let mut cert: Certificate = env
+            .storage()
+            .instance()
+            .get(&DataKey::Certificate(id.clone()))
+            .expect("Certificate not found");
+        cert.issuer.require_auth();
+
+        if cert.status == CertificateStatus::Suspended {
+            panic!("Certificate is already suspended");
+        }
+
+        cert.status = CertificateStatus::Suspended;
+        env.storage()
+            .instance()
+            .set(&DataKey::Certificate(id.clone()), &cert);
+    }
+
+    /// Reinstate a suspended certificate
+    pub fn reinstate_certificate(env: Env, id: String) {
+        let mut cert: Certificate = env
+            .storage()
+            .instance()
+            .get(&DataKey::Certificate(id.clone()))
+            .expect("Certificate not found");
+        cert.issuer.require_auth();
+
+        if cert.status != CertificateStatus::Suspended {
+            panic!("Certificate is not suspended");
+        }
+
+        cert.status = CertificateStatus::Active;
+        env.storage()
+            .instance()
+            .set(&DataKey::Certificate(id.clone()), &cert);
+    }
+
+    /// Freeze a certificate
+    pub fn freeze_certificate(env: Env, id: String) {
+        let mut cert: Certificate = env
+            .storage()
+            .instance()
+            .get(&DataKey::Certificate(id.clone()))
+            .expect("Certificate not found");
+        cert.issuer.require_auth();
+
+        if cert.status == CertificateStatus::Frozen {
+            panic!("Certificate is already frozen");
+        }
+
+        cert.status = CertificateStatus::Frozen;
+        env.storage()
+            .instance()
+            .set(&DataKey::Certificate(id.clone()), &cert);
+    }
+
+    /// Unfreeze a certificate
+    pub fn unfreeze_certificate(env: Env, id: String) {
+        let mut cert: Certificate = env
+            .storage()
+            .instance()
+            .get(&DataKey::Certificate(id.clone()))
+            .expect("Certificate not found");
+        cert.issuer.require_auth();
+
+        if cert.status != CertificateStatus::Frozen {
+            panic!("Certificate is not frozen");
+        }
+
+        cert.status = CertificateStatus::Active;
+        env.storage()
+            .instance()
+            .set(&DataKey::Certificate(id.clone()), &cert);
+    }
+
 
     /// Verify if a certificate is valid (active and not expired)
     pub fn is_valid(env: Env, id: String) -> bool {
@@ -288,9 +374,15 @@ impl CertificateContract {
             panic!("Not an authorized signer");
         }
 
-        if !request.approvals.contains(&approver) {
-            request.approvals.push_back(approver);
+        if request.approvals.contains(&approver) {
+            return SignatureResult {
+                success: false,
+                message: String::from_str(&env, "Request already approved by this signer"),
+                final_status: OptionalRequestStatus::Some(request.status),
+            };
         }
+
+        request.approvals.push_back(approver);
 
         if request.approvals.len() >= config.threshold {
             request.status = RequestStatus::Approved;
@@ -439,5 +531,94 @@ impl CertificateContract {
             .instance()
             .set(&DataKey::PendingRequest(request_id), &request);
         true
+    }
+
+    /// Batch verify multiple certificates
+    pub fn batch_verify_certificates(env: Env, ids: Vec<String>) -> VerificationReport {
+        const BASE_VERIFICATION_COST: u64 = 100;
+        const COST_PER_CERTIFICATE: u64 = 50;
+
+        let mut results = Vec::<VerificationResult>::new(&env);
+        let mut successful: u32 = 0;
+        let mut failed: u32 = 0;
+
+        for id in ids.iter() {
+            if let Some(cert) = env
+                .storage()
+                .instance()
+                .get::<_, Certificate>(&DataKey::Certificate(id.clone()))
+            {
+                let is_revoked = cert.status == CertificateStatus::Revoked
+                    || cert.status == CertificateStatus::Suspended
+                    || cert.status == CertificateStatus::Expired;
+
+                if !is_revoked {
+                    successful += 1;
+                } else {
+                    failed += 1;
+                }
+
+                results.push_back(VerificationResult {
+                    id: id.clone(),
+                    exists: true,
+                    revoked: is_revoked,
+                });
+            } else {
+                failed += 1;
+                results.push_back(VerificationResult {
+                    id: id.clone(),
+                    exists: false,
+                    revoked: false,
+                });
+            }
+        }
+
+        let total_cost = BASE_VERIFICATION_COST + (COST_PER_CERTIFICATE * ids.len() as u64);
+
+        VerificationReport {
+            total: ids.len() as u32,
+            successful,
+            failed,
+            total_cost,
+            results,
+        }
+    }
+
+    /// Set certificate expiry (only admin can call)
+    pub fn set_certificate_expiry(env: Env, id: String, expiry_time: u64, admin: Address) {
+        let stored_admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .expect("Contract not initialized");
+        admin.require_auth();
+
+        if admin != stored_admin {
+            panic!("Only admin can set certificate expiry");
+        }
+
+        let mut cert: Certificate = env
+            .storage()
+            .instance()
+            .get(&DataKey::Certificate(id.clone()))
+            .expect("Certificate not found");
+
+        cert.expires_at = Some(expiry_time);
+        env.storage()
+            .instance()
+            .set(&DataKey::Certificate(id), &cert);
+    }
+
+    /// Get certificate expiry time
+    pub fn get_certificate_expiry(env: Env, id: String) -> Option<u64> {
+        if let Some(cert) = env
+            .storage()
+            .instance()
+            .get::<_, Certificate>(&DataKey::Certificate(id))
+        {
+            cert.expires_at
+        } else {
+            None
+        }
     }
 }

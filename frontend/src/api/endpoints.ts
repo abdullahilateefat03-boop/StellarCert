@@ -8,6 +8,7 @@ import {
     DashboardStats,
     IssuanceTrendPoint,
     PaginatedResponse,
+    CertificateExportFilters,
     StatusDistribution,
     User,
     UserRole,
@@ -25,7 +26,8 @@ import { tokenStorage } from './tokens';
 
 // Configuration flag - set to true to use dummy data
 let USE_DUMMY_DATA = true;
-const API_URL = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_URL || 'http://localhost:3000/api/v1';
+const API_URL_BASE = (import.meta as unknown as { env: Record<string, string> }).env?.VITE_API_URL || 'http://localhost:3000/api/v1';
+export const API_URL = API_URL_BASE;
 
 // Helper function to simulate API delay
 const simulateDelay = () => new Promise(resolve => setTimeout(resolve, 300));
@@ -48,7 +50,7 @@ const handleError = (error: unknown, endpointName: string): never => {
 /**
  * Standardized API client for all requests
  */
-async function apiClient<T>(
+export async function apiClient<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
@@ -350,6 +352,21 @@ export const getUserCertificates = async (userId: string): Promise<Certificate[]
     }
 };
 
+export const getCertificateQR = async (certificateId: string): Promise<string> => {
+    if (USE_DUMMY_DATA) {
+        await simulateDelay();
+        // Return a dummy QR code URL (in real implementation, this would be actual QR code image)
+        return `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzMzMyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkJJIENvZGU6ICR7Y2VydGlmaWNhdGVJZH08L3RleHQ+Cjwvc3ZnPg==`;
+    }
+
+    try {
+        const data = await apiClient<{ qrCode: string }>(`/certificates/${certificateId}/qr`);
+        return data.qrCode;
+    } catch (error) {
+        return handleError(error, "getCertificateQR");
+    }
+};
+
 export const certificateApi = {
     list: async (params?: {
         page?: number;
@@ -378,12 +395,46 @@ export const certificateApi = {
         return apiClient<Certificate>(`/certificates/${id}`);
     },
     getUserCertificates,
-    bulkExport: async (certificateIds: string[]): Promise<Blob> => {
+    bulkExport: async (
+        certificateIds: string[],
+        filters?: CertificateExportFilters,
+    ): Promise<Blob> => {
         if (USE_DUMMY_DATA) {
             await simulateDelay();
             // Create a dummy CSV blob
             const headers = ['ID', 'Recipient Name', 'Email', 'Title', 'Status', 'Issue Date'];
-            const certs = dummyData.certificates.filter(c => certificateIds.includes(c.id));
+            const normalizedSearch = filters?.search?.trim().toLowerCase();
+            const startDate = filters?.startDate ? new Date(filters.startDate) : null;
+            const endDate = filters?.endDate ? new Date(filters.endDate) : null;
+
+            const certs = dummyData.certificates.filter((certificate) => {
+                const matchesIds =
+                    certificateIds.length === 0 || certificateIds.includes(certificate.id);
+                const matchesSearch =
+                    !normalizedSearch ||
+                    [
+                        certificate.id,
+                        certificate.serialNumber,
+                        certificate.recipientName,
+                        certificate.recipientEmail,
+                        certificate.title,
+                        certificate.issuerName,
+                    ]
+                        .some((value) => value?.toLowerCase().includes(normalizedSearch));
+                const matchesStatus =
+                    !filters?.status || certificate.status === filters.status;
+                const issueDate = new Date(certificate.issueDate);
+                const matchesStartDate = !startDate || issueDate >= startDate;
+                const matchesEndDate = !endDate || issueDate <= endDate;
+
+                return (
+                    matchesIds &&
+                    matchesSearch &&
+                    matchesStatus &&
+                    matchesStartDate &&
+                    matchesEndDate
+                );
+            });
             const rows = certs.map(c => [c.id, c.recipientName, c.recipientEmail, c.title, c.status, c.issueDate]);
             const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
             return new Blob([csv], { type: 'text/csv' });
@@ -394,7 +445,7 @@ export const certificateApi = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${tokenStorage.getAccessToken()}`
             },
-            body: JSON.stringify({ certificateIds })
+            body: JSON.stringify({ certificateIds, filters })
         });
         if (!response.ok) {
             throw new Error('Export failed');
@@ -456,6 +507,7 @@ export const certificateApi = {
             method: 'POST'
         });
     },
+    getQR: getCertificateQR,
 };
 
 // ==================== AUTHENTICATION ====================
